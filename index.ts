@@ -1,3 +1,3 @@
-import {getLeague} from "./src/utills.js";
+import {getDivPrice, getLeague} from "./src/utills.js";
 
-console.log(await getLeague())
+

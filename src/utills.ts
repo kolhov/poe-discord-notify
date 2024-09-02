@@ -14,11 +14,11 @@ export function getLeague() {
     headers: {
       'user-agent': 'my-app/0.0.1'
     }
-  }).then(
-    function (response) {
-      return response.data[8]['id'];         //0-7 standard leagues
-    }
-  )
+  })
+    .then(function (response) {
+      return response.data[8]['id'];                //0-7 standard leagues
+    })
+    .catch((err) => console.log(err))
 }
 
 export async function getDivPrice(){
@@ -27,26 +27,28 @@ export async function getDivPrice(){
       league: await getLeague(),
       type: ECurrency.CURRENCY
     }
-  }).then((response){
-    return response
-  }
-  )
+  })
+    .then(function (response){
+    return Math.round(response.data['lines'].find(item => item['currencyTypeName'] === "Divine Orb")['receive']['value']
+    )})
+    .catch((err) => console.log(err))
 }
 
 export async function processCurrency(){
+  const divPrice = await getDivPrice();
   axios.get("https://poe.ninja/api/data/currencyoverview", {
     params: {
       league: await getLeague(),
       type: ECurrency.CURRENCY
     }
   }).then(function (response){
-    let risingItem: IDiscordMessage[] = response['lines'].filter((item) => item["receiveSparkLine"] > priceHike)
+    let risingItem: IDiscordMessage[] = response.data['lines'].filter((item) => item["receiveSparkLine"] > priceHike)
       .map(function (item) {
         return {
           name: item['currencyTypeName'],
-          icon: item,
+          icon: response.data['currencyDetails'].find(x => x['name'] === item['currencyTypeName'])?.icon,
           sparkLine: Math.round(item['receiveSparkLine']['totalChange']),
-          divCost: number,
+          divCost: Math.round((item['chaosEquivalent'] / divPrice) * 10) / 10,
           chaosCost: Math.round(item['chaosEquivalent'])
         } as IDiscordMessage
       })
