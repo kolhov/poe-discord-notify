@@ -82,15 +82,36 @@ export class PoeDiscordBot {
       })
   }
 
-  sendToDiscord(webhookToken: string, item: IDiscordMessage) {
+  sendToDiscord(webhookToken: string, item: IDiscordMessage | IDiscordMessage[], category?) {
     if (!item) {
      console.log('No item for send')
     }
-    let message = `> *Прирост +${item.sparkLine}* ${item.name} ${item.chaosCost} <:chaosorb:1280152529866457179> (${item.divCost} <:divineorb:1280152866253836288>)\n`
+    let embeds;
+    let fields;
 
-    axios.post(webhookToken, {
-      //content: message,
-      embeds: [
+    if (Array.isArray(item)){
+      fields = item.map((x) => {
+        return {
+          name: `${x.name}`,
+          value: `*Прирост +${x.sparkLine}%*  |  ${x.chaosCost} <:chaosorb:1280152529866457179>  |  ${x.divCost} <:divineorb:1280152866253836288>\n`,
+          inline: false
+        }
+      })
+      embeds = [
+        {
+          title: category,
+          color: 14447215,
+          thumbnail: {
+            url: item[0].icon
+          },
+          fields: fields,
+          footer: {
+            text: `Current divine: ${this._divinePrice}`
+          }
+        }
+      ]
+    } else {
+      embeds = [
         {
           title: item.name,
           color: 16777215,
@@ -119,9 +140,13 @@ export class PoeDiscordBot {
           }
         }
       ]
+    }
+
+    axios.post(webhookToken, {
+      embeds: embeds
     })
       .then((response) => console.log("Successfully posted on discord"))
-      .catch((err) => console.log(`Error content ${message} \n ###################### \n ${JSON.stringify(err.response.data)}`))
+      .catch((err) => console.log(`\nError content ${JSON.stringify(embeds)} ###################### \n ${JSON.stringify(err.response.data)}`))
   }
 
   async currencyOverview(currencyType: ECurrency = ECurrency.CURRENCY) {
@@ -174,6 +199,7 @@ export class PoeDiscordBot {
         let filteredArray = response.data['lines'].filter((item) =>
           item["sparkline"]["totalChange"] > this.priceHike && item['chaosValue'] > 20);
 
+        let itemArray: IDiscordMessage[] = [];
         for (const x of filteredArray) {
           let risingItem = {
             name: x['name'],
@@ -182,12 +208,19 @@ export class PoeDiscordBot {
             divCost: x['divineValue'],
             chaosCost: Math.round(x['chaosValue'])
           } as IDiscordMessage
+          itemArray.push(risingItem);
 
-          console.log(`Item ${x['name']} prepared to send`)
-          this.sendToDiscord(this.discordBot, risingItem);
+          // Discord have limit to 25 item per message
+          if (itemArray.length == 25){
+            this.sendToDiscord(this.discordBot, itemArray, itemType);
+            itemArray = [];
 
-          // Timeout to prevent discord rate limits
-          await new Promise(resolve => setTimeout(resolve, 400));
+            // Timeout to prevent discord rate limits
+            await new Promise(resolve => setTimeout(resolve, 400));
+          }
+        }
+        if (itemArray.length > 0){
+          this.sendToDiscord(this.discordBot, itemArray, itemType);
         }
       })
       .catch((err) => console.log(err));
@@ -197,6 +230,9 @@ export class PoeDiscordBot {
     for (const x of Object.values(EItem) as EItem[]){
       console.log(`\n${x} overview`);
       await this.itemOverview(x);
+
+      // Timeout to prevent poe.ninja/Discord rate limits
+      await new Promise(resolve => setTimeout(resolve, 400));
     }
   }
 }

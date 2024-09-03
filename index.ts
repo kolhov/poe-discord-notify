@@ -2,7 +2,6 @@ import {PoeDiscordBot} from "./src/poe-discord-bot.js";
 import "dotenv/config";
 
 
-const discordBot = new PoeDiscordBot();
+const discordBot = new PoeDiscordBot(40);
 
-discordBot.allCurrencyOverview().then(() =>
-  discordBot.allItemOverview())
+discordBot.allItemOverview()
