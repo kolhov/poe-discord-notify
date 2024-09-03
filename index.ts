@@ -1,7 +1,8 @@
-import {getDivPrice, getLeague, processCurrency} from "./src/utills.js";
+import {PoeDiscordBot} from "./src/utills.js";
 import axios from "axios";
-import dotenv from "dotenv";
+import "dotenv/config";
 
-dotenv.config();
-processCurrency().then();
 
+const discordBot = new PoeDiscordBot(19);
+
+discordBot.currencyOverview();
