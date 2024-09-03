@@ -7,7 +7,6 @@ export enum EItem {
   RESONATOR = "Resonator",
   ESSENCE = "Essence",
   DIVINATION_CARD = "DivinationCard",
-  SKILL_GEM = "SkillGem",
   UNIQUE_JEWEL = "UniqueJewel",
   UNIQUE_FLASK = "UniqueFlask",
   UNIQUE_WEAPON = "UniqueWeapon",
@@ -18,7 +17,7 @@ export enum EItem {
   INVITATIONS = "Invitation",
 
   // kind of useless
-
+  // SKILL_GEM = "SkillGem",        // need better handle
   // UNIQUE_RELIC = "UniqueRelic",
   // OMENS = "Omen",
   // DELIRIUM_ORBS = "DeliriumOrb",

@@ -201,6 +201,9 @@ export class PoeDiscordBot {
 
         let itemArray: IDiscordMessage[] = [];
         for (const x of filteredArray) {
+          if (x?.['links'] && x['links'] > 4) {
+            continue;                                                   // Skip 5-6 link armour/weapon duplicates
+          }
           let risingItem = {
             name: x['name'],
             icon: x['icon'],
