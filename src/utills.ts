@@ -1,6 +1,5 @@
 import axios from "axios";
 import {ECurrency} from "./currency.js";
-import {EItem} from "./item.js";
 import {IDiscordMessage} from "./i-discord-message.js";
 import "dotenv/config"
 
@@ -9,21 +8,28 @@ export class PoeDiscordBot {
 
   discordBot: string;
   priceHike: number;
-  currentLeague: string;
+  private _currentLeague: string;
   private _divinePrice: number;
 
   constructor(priceHike: number = 20) {
     this.priceHike = priceHike;
     this.discordBot = process.env["DISCORD_TOKEN"];
-    this.setLeague(this.fetchLeague());
   }
 
   setPriceHike(priceHike: number){
     this.priceHike = priceHike;
   }
 
-  setLeague(name) {
-    this.currentLeague = name;
+  setLeague(name: string | null) {
+    this._currentLeague = name;
+  }
+
+  async getLeague(){
+    if (!this._currentLeague){
+      this._currentLeague = await this.fetchLeague();
+    }
+
+    return this._currentLeague;
   }
 
   fetchLeague() {
@@ -36,9 +42,12 @@ export class PoeDiscordBot {
       }
     })
       .then(function (response) {
-        return response.data[8]['id'];                //0-7 standard leagues
+        return response.data[8]['id'] as string;                //0-7 standard leagues
       })
-      .catch((err) => console.log(err))
+      .catch((err) => {
+        console.log(err + '\n Current league set to standard');
+        return 'Standard';
+      })
   }
 
   async getDivPrice(){
@@ -56,13 +65,16 @@ export class PoeDiscordBot {
   async fetchDivPrice() {
     return await axios.get("https://poe.ninja/api/data/currencyoverview", {
       params: {
-        league: this.currentLeague,
+        league: await this.getLeague(),
         type: ECurrency.CURRENCY
       }
     })
       .then(function (response) {
-        return Math.round(response.data['lines'].find(item => item['currencyTypeName'] === "Divine Orb")['receive']['value']
-        )
+        const divPrice =  Math.round(response.data['lines']
+          .find(item => item['currencyTypeName'] === "Divine Orb")['receive']['value']);
+
+        console.log(`Divine fetched: ${divPrice} chaos orb`);
+        return divPrice;
       })
       .catch((err) => {
         console.log(err);
@@ -71,7 +83,9 @@ export class PoeDiscordBot {
   }
 
   sendToDiscord(webhookToken: string, item: IDiscordMessage) {
-    if (!item) return;
+    if (!item) {
+     console.log('No item for send')
+    }
     let message = `> *Прирост +${item.sparkLine}* ${item.name} ${item.chaosCost} <:chaosorb:1280152529866457179> (${item.divCost} <:divineorb:1280152866253836288>)\n`
 
     axios.post(webhookToken, {
@@ -110,11 +124,11 @@ export class PoeDiscordBot {
       .catch((err) => console.log(`Error content ${message} \n ###################### \n ${JSON.stringify(err.response.data)}`))
   }
 
-  async currencyOverview(currencyType: ECurrency) {
-    const divPrice = this.getDivPrice();
+  async currencyOverview(currencyType: ECurrency = ECurrency.CURRENCY) {
+    const divPrice = await this.getDivPrice();
     axios.get("https://poe.ninja/api/data/currencyoverview", {
       params: {
-        league: this.currentLeague,
+        league: await this.getLeague(),
         type: currencyType
       }
     })
@@ -131,6 +145,7 @@ export class PoeDiscordBot {
             chaosCost: Math.round(x['chaosEquivalent'])
           } as IDiscordMessage
 
+          console.log(`Item ${x['currencyTypeName']} prepared to send`)
           this.sendToDiscord(this.discordBot, risingItem);
 
           // Timeout to prevent discord rate limits

@@ -3,6 +3,6 @@ import axios from "axios";
 import "dotenv/config";
 
 
-const discordBot = new PoeDiscordBot(19);
+const discordBot = new PoeDiscordBot(5);
 
-discordBot.currencyOverview();
+discordBot.currencyOverview().then();
