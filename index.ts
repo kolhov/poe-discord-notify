@@ -1,8 +1,8 @@
-import {PoeDiscordBot} from "./src/utills.js";
-import axios from "axios";
+import {PoeDiscordBot} from "./src/poe-discord-bot.js";
 import "dotenv/config";
 
 
-const discordBot = new PoeDiscordBot(5);
+const discordBot = new PoeDiscordBot();
 
-discordBot.currencyOverview().then();
+discordBot.allCurrencyOverview().then(() =>
+  discordBot.allItemOverview())

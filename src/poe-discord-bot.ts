@@ -2,7 +2,7 @@ import axios from "axios";
 import {ECurrency} from "./currency.js";
 import {IDiscordMessage} from "./i-discord-message.js";
 import "dotenv/config"
-
+import {EItem} from "./item.js";
 
 export class PoeDiscordBot {
 
@@ -115,7 +115,7 @@ export class PoeDiscordBot {
             },
           ],
           footer: {
-            text: `${this._divinePrice} <:divineorb:1280152866253836288>`
+            text: `Current divine: ${this._divinePrice}`
           }
         }
       ]
@@ -153,5 +153,50 @@ export class PoeDiscordBot {
         }
       })
       .catch((err) => console.log(err));
+  }
+
+  async allCurrencyOverview(){
+    for (const x of Object.values(ECurrency) as ECurrency[]){
+      console.log(`\n${x} overview`);
+      await this.currencyOverview(x);
+    }
+  }
+
+  async itemOverview(itemType: EItem = EItem.SCARAB) {
+    const divPrice = await this.getDivPrice();
+    axios.get("https://poe.ninja/api/data/itemoverview", {
+      params: {
+        league: await this.getLeague(),
+        type: itemType
+      }
+    })
+      .then(async (response) => {
+        let filteredArray = response.data['lines'].filter((item) =>
+          item["sparkline"]["totalChange"] > this.priceHike && item['chaosValue'] > 20);
+
+        for (const x of filteredArray) {
+          let risingItem = {
+            name: x['name'],
+            icon: x['icon'],
+            sparkLine: Math.round(x['sparkline']['totalChange']),
+            divCost: x['divineValue'],
+            chaosCost: Math.round(x['chaosValue'])
+          } as IDiscordMessage
+
+          console.log(`Item ${x['name']} prepared to send`)
+          this.sendToDiscord(this.discordBot, risingItem);
+
+          // Timeout to prevent discord rate limits
+          await new Promise(resolve => setTimeout(resolve, 400));
+        }
+      })
+      .catch((err) => console.log(err));
+  }
+
+  async allItemOverview(){
+    for (const x of Object.values(EItem) as EItem[]){
+      console.log(`\n${x} overview`);
+      await this.itemOverview(x);
+    }
   }
 }
