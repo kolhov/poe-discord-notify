@@ -4,4 +4,9 @@ import "dotenv/config";
 
 const discordBot = new PoeDiscordBot(40);
 
-discordBot.allItemOverview()
+// All economy overview
+// discordBot.allItemOverview().then(() =>
+//   discordBot.allCurrencyOverview()).then(() =>
+//     discordBot.beastOverview())
+
+discordBot.beastOverview()

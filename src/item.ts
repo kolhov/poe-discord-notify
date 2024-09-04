@@ -12,12 +12,13 @@ export enum EItem {
   UNIQUE_WEAPON = "UniqueWeapon",
   UNIQUE_ARMOUR = "UniqueArmour",
   UNIQUE_ACCESSORY = "UniqueAccessory",
-  BEAST = "Beast",
   MEMORIES = "Memory",
   INVITATIONS = "Invitation",
 
-  // kind of useless
   // SKILL_GEM = "SkillGem",        // need better handle
+  //BEAST = "Beast",                // There will be separate function
+
+  // kind of useless
   // UNIQUE_RELIC = "UniqueRelic",
   // OMENS = "Omen",
   // DELIRIUM_ORBS = "DeliriumOrb",
@@ -31,4 +32,5 @@ export enum EItem {
   // VIALS = "Vial",
   // BLIGHTED_MAPS = "BlightedMaps",
   // BLIGHT_RAVAGED_MAPS = "BlightRavagedMaps",
+
 }

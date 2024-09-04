@@ -6,14 +6,16 @@ import {EItem} from "./item.js";
 
 export class PoeDiscordBot {
 
-  discordBot: string;
   priceHike: number;
+  private _discordBot: string;
   private _currentLeague: string;
   private _divinePrice: number;
+  private _floorChaosPrice: number;
 
-  constructor(priceHike: number = 20) {
+  constructor(priceHike: number = 20, floorChaosPrice: number = 20) {
     this.priceHike = priceHike;
-    this.discordBot = process.env["DISCORD_TOKEN"];
+    this._floorChaosPrice = floorChaosPrice;
+    this._discordBot = process.env["DISCORD_TOKEN"];
   }
 
   setPriceHike(priceHike: number){
@@ -93,7 +95,7 @@ export class PoeDiscordBot {
       fields = item.map((x) => {
         return {
           name: `${x.name}`,
-          value: `*Прирост +${x.sparkLine}%*  |  ${x.chaosCost} <:chaosorb:1280152529866457179>  |  ${x.divCost} <:divineorb:1280152866253836288>\n`,
+          value: `*Прирост ${x.sparkLine}%* \u200B\u200B\u200B\u200B\u200B\u200B ${x.chaosCost} <:chaosorb:1280152529866457179> \u200B\u200B\u200B ${x.divCost} <:divineorb:1280152866253836288>\n`,
           inline: false
         }
       })
@@ -131,7 +133,7 @@ export class PoeDiscordBot {
             },
             {
               name: `Прирост`,
-              value: `*+${item.sparkLine}%*`,
+              value: `*${item.sparkLine}%*`,
               inline: true
             },
           ],
@@ -159,7 +161,7 @@ export class PoeDiscordBot {
     })
       .then(async (response) => {
         let filteredArray = response.data['lines'].filter((item) =>
-          item["receiveSparkLine"]["totalChange"] > this.priceHike && item['chaosEquivalent'] > 20);
+          item["receiveSparkLine"]["totalChange"] > this.priceHike && item['chaosEquivalent'] > this._floorChaosPrice);
 
         for (const x of filteredArray) {
           let risingItem = {
@@ -171,7 +173,7 @@ export class PoeDiscordBot {
           } as IDiscordMessage
 
           console.log(`Item ${x['currencyTypeName']} prepared to send`)
-          this.sendToDiscord(this.discordBot, risingItem);
+          this.sendToDiscord(this._discordBot, risingItem);
 
           // Timeout to prevent discord rate limits
           await new Promise(resolve => setTimeout(resolve, 400));
@@ -197,7 +199,7 @@ export class PoeDiscordBot {
     })
       .then(async (response) => {
         let filteredArray = response.data['lines'].filter((item) =>
-          item["sparkline"]["totalChange"] > this.priceHike && item['chaosValue'] > 20);
+          item["sparkline"]["totalChange"] > this.priceHike && item['chaosValue'] > this._floorChaosPrice);
 
         let itemArray: IDiscordMessage[] = [];
         for (const x of filteredArray) {
@@ -215,7 +217,7 @@ export class PoeDiscordBot {
 
           // Discord have limit to 25 item per message
           if (itemArray.length == 25){
-            this.sendToDiscord(this.discordBot, itemArray, itemType);
+            this.sendToDiscord(this._discordBot, itemArray, itemType);
             itemArray = [];
 
             // Timeout to prevent discord rate limits
@@ -223,7 +225,7 @@ export class PoeDiscordBot {
           }
         }
         if (itemArray.length > 0){
-          this.sendToDiscord(this.discordBot, itemArray, itemType);
+          this.sendToDiscord(this._discordBot, itemArray, itemType);
         }
       })
       .catch((err) => console.log(err));
@@ -237,5 +239,46 @@ export class PoeDiscordBot {
       // Timeout to prevent poe.ninja/Discord rate limits
       await new Promise(resolve => setTimeout(resolve, 400));
     }
+  }
+
+  async beastOverview(){
+    const divPrice = await this.getDivPrice();
+    axios.get("https://poe.ninja/api/data/itemoverview", {
+      params: {
+        league: await this.getLeague(),
+        type: 'Beast'
+      }
+    })
+      .then(async (response) => {
+        let filteredArray = response.data['lines'].filter((item) =>
+          item['chaosValue'] > this._floorChaosPrice &&
+            // Ignore scammers, probably will skip all rare red beasts on start of the league, but whatever
+            item['listingCount'] > 80);
+
+        let beastArray: IDiscordMessage[] = [];
+        for (const x of filteredArray) {
+          let beast = {
+            name: x['name'],
+            icon: x['icon'],
+            sparkLine: Math.round(x['sparkline']['totalChange']),
+            divCost: x['divineValue'],
+            chaosCost: Math.round(x['chaosValue'])
+          } as IDiscordMessage
+          beastArray.push(beast);
+
+          // Discord have limit to 25 item per message
+          if (beastArray.length == 25){
+            this.sendToDiscord(this._discordBot, beastArray, 'Beasts');
+            beastArray = [];
+
+            // Timeout to prevent discord rate limits
+            await new Promise(resolve => setTimeout(resolve, 400));
+          }
+        }
+        if (beastArray.length > 0){
+          this.sendToDiscord(this._discordBot, beastArray, 'Beasts');
+        }
+      })
+      .catch((err) => console.log(err));
   }
 }
