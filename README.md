@@ -9,4 +9,4 @@ When a positive change is detected, the utility automatically posts updates in a
 
 To make it work, you need to add the webhook URL to the .env file in the project directory. This webhook URL can be created in the settings of the Discord channel.
 
-| Note: This product isn't affiliated with or endorsed by Grinding Gear Games in any way.
+> Note: This product isn't affiliated with or endorsed by Grinding Gear Games in any way.
