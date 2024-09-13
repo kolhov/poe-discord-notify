@@ -87,6 +87,10 @@ export class PoeDiscordBot {
   async sendToDiscord(item: IDiscordMessage | IDiscordMessage[], category?) {
     if (!item) {
       console.log('No item for send')
+      return;
+    }
+    if (!this._divinePrice){
+      await this.refreshDivPrice();
     }
     let embeds;
     let fields;
